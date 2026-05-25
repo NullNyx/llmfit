@@ -1,0 +1,46 @@
+# llmfit - Docker Compose for DevOps
+# =================================
+# Deploy llmfit as REST API server that:
+# - auto-detects hardware (RAM, CPU, GPU)
+# - ranks models against detected hardware
+# - exposes HTTP API at :8787
+# - serves web dashboard at /
+#
+# Usage:
+#   docker compose up -d --build
+#   curl http://localhost:8787/api/v1/system
+#   curl "http://localhost:8787/api/v1/models/top?limit=5&min_fit=good"
+#
+# GPU notes:
+# - NVIDIA: host needs nvidia-container-toolkit
+# - AMD ROCm: host needs ROCm device access
+# - Apple Silicon: use native binary, not Docker, for accurate hardware detection
+
+services:
+  llmfit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: llmfit
+    ports:
+      - "8787:8787"
+    environment:
+      LLMFIT_DASHBOARD_HOST: "0.0.0.0"
+      LLMFIT_DASHBOARD_PORT: "8787"
+      XDG_DATA_HOME: "/home/llmfit/.local/share"
+      # Optional overrides when host detection is incomplete:
+      # LOCALMAXXING_API_KEY: "your_key_here"
+    volumes:
+      - llmfit_cache:/home/llmfit/.local/share/llmfit
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget -q -O /dev/null http://127.0.0.1:8787/api/v1/system || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    command: ["serve", "--host", "0.0.0.0", "--port", "8787"]
+
+volumes:
+  llmfit_cache:
+    driver: local
