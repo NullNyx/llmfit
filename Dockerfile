@@ -19,6 +19,7 @@ COPY llmfit-core/ ./llmfit-core/
 COPY llmfit-tui/ ./llmfit-tui/
 COPY llmfit-desktop/ ./llmfit-desktop/
 COPY data/ ./data/
+COPY llmfit-web/ ./llmfit-web/
 
 # Build release binary for llmfit-tui
 RUN cargo build --release -p llmfit
@@ -28,6 +29,7 @@ FROM debian:bookworm-slim
 
 # Install runtime dependencies for hardware detection
 RUN apt-get update && apt-get install -y \
+    wget \
     pciutils \
     lshw \
     && rm -rf /var/lib/apt/lists/*
